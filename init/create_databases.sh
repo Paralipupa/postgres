@@ -12,13 +12,17 @@ function create_user_and_database() {
 EOSQL
 }
 
-function create_web_user() {
-	local username=${WEB_USER:-postgres}
-	local password=${WEB_PASSWORD:-default_password}
-	echo "  Creating user '$username'"
-	psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
-	    CREATE USER $username WITH PASSWORD '$password';
-EOSQL
+function create_or_update_web_user() {
+    local username=${WEB_USER:-postgres}
+    local password=${WEB_PASSWORD:-password}
+    local user_exists=$(psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -tAc "SELECT 1 FROM pg_roles WHERE rolname = '$username'")
+    if [[ "$user_exists" != "1" ]]; then
+        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+            CREATE USER $username WITH PASSWORD '$password';
+        EOSQL
+    else
+        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -c "ALTER USER $username WITH PASSWORD '$password';"
+    fi
 }
 
 function grant_privileges_to_web_user() {
@@ -32,6 +36,8 @@ EOSQL
 	done
 }
 
+create_web_user
+
 if [ -n "${POSTGRES_MULTIPLE_DATABASES:-}" ]; then
 	echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
 	for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
@@ -40,8 +46,6 @@ if [ -n "${POSTGRES_MULTIPLE_DATABASES:-}" ]; then
 	echo "Multiple databases created"
 	grant_privileges_to_web_user "$POSTGRES_MULTIPLE_DATABASES"
 fi
-
-create_web_user
 
 # Ожидаем старта PostgreSQL перед применением настроек
 sleep 10
