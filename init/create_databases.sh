@@ -19,7 +19,7 @@ function create_or_update_web_user() {
     if [[ "$user_exists" != "1" ]]; then
         psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
             CREATE USER $username WITH PASSWORD '$password';
-        EOSQL
+EOSQL
     else
         psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -c "ALTER USER $username WITH PASSWORD '$password';"
     fi
@@ -36,7 +36,7 @@ EOSQL
 	done
 }
 
-create_web_user
+create_or_update_web_user
 
 if [ -n "${POSTGRES_MULTIPLE_DATABASES:-}" ]; then
 	echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
