@@ -13,7 +13,7 @@ EOSQL
 }
 
 function create_web_user() {
-	local username=${WEB_USER:-web}
+	local username=${WEB_USER:-postgres}
 	local password=${WEB_PASSWORD:-default_password}
 	echo "  Creating user '$username'"
 	psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
@@ -22,7 +22,7 @@ EOSQL
 }
 
 function grant_privileges_to_web_user() {
-	local username=${WEB_USER:-web}
+	local username=${WEB_USER:-postgres}
 	local databases=$1
 	for db in $(echo $databases | tr ',' ' '); do
 		echo "  Granting privileges on database '$db' to user '$username'"
